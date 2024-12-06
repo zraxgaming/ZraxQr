@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #111;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        h1 {
+            color: #FF5A5F;
+            text-align: center;
+            font-size: 32px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .button {
+            background-color: #FF5A5F;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #F44336;
+        }
+        .input-field {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #FF5A5F;
+            color: #FF5A5F;
+            background-color: #333;
+            width: 100%;
+            font-size: 16px;
+        }
+        #qrCodePreview {
+            margin-top: 20px;
+            width: 200px;
+            height: 200px;
+        }
+        .step-button {
+            background-color: #333;
+            color: white;
+            padding: 12px;
+            border: 1px solid #FF5A5F;
+            border-radius: 5px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        .step-button:hover {
+            background-color: #FF5A5F;
+        }
+        .hidden {
+            display: none;
+        }
+        .dock {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #333;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+        }
+        .dock .step-indicator {
+            font-size: 18px;
+        }
+        .dock .back-button {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border: 1px solid #FF5A5F;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .dock .back-button:hover {
+            background-color: #FF5A5F;
+        }
+
+        /* Neon text for footer */
+        .footer-text {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF5A5F;
+            text-shadow: 0 0 10px #FF5A5F, 0 0 20px #FF5A5F, 0 0 30px #FF5A5F;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Name Entry -->
+<div class="container" id="nameEntry">
+    <h1>Welcome to QR Code Generator</h1>
+    <input type="text" id="userName" class="input-field" placeholder="Enter your name" />
+    <button class="button" onclick="setWelcomeMessage()">Submit</button>
+</div>
+
+<!-- Main Menu -->
+<div class="container hidden" id="mainMenu">
+    <h1 id="mainMenuGreeting"></h1>
+    <button class="button" onclick="goToStep1()">Start QR Code Creation</button>
+</div>
+
+<!-- Step 1: Choose QR Type -->
+<div class="container hidden" id="step1">
+    <h1>Step 1: Choose QR Code Type</h1>
+    <button class="step-button" onclick="chooseOption('text')">Text</button>
+    <button class="step-button" onclick="chooseOption('url')">URL</button>
+    <button class="step-button" onclick="chooseOption('file')">File</button>
+    <button class="step-button" onclick="chooseOption('img')">Image</button>
+    <button class="step-button" onclick="chooseOption('video')">Video/YouTube</button>
+    <button class="back-button" onclick="returnToMainMenu()">Back to Main Menu</button>
+</div>
+
+<!-- Step 2: Enter Data for Selected Option -->
+<div class="container hidden" id="dataStep">
+    <h1>Step 2: Enter Data</h1>
+    <input type="text" id="dataInput" class="input-field" placeholder="Enter data based on selected option" />
+    <input type="file" id="fileInput" class="input-field hidden" accept=".txt, .pdf, .jpg, .png, .mp4" />
+    <input type="file" id="imgInput" class="input-field hidden" accept=".jpg, .png" />
+    <input type="text" id="ytInput" class="input-field hidden" placeholder="Enter YouTube URL" />
+    <button class="step-button" onclick="goToStep3()">Next</button>
+    <button class="back-button" onclick="goBackToStep1()">Back</button>
+</div>
+
+<!-- Step 3: Customize QR Code -->
+<div class="container hidden" id="step3">
+    <h1>Step 3: Customize QR Code</h1>
+    <label for="qrColor">Choose QR Color:</label>
+    <input type="color" id="qrColor" class="input-field" />
+    <label for="qrLogo">Upload Logo (Optional):</label>
+    <input type="file" id="qrLogo" class="input-field" />
+    <button class="step-button" onclick="generateQRCode()">Generate QR Code</button>
+    <button class="back-button" onclick="goBackToStep2()">Back</button>
+</div>
+
+<!-- Step 4: Download QR Code -->
+<div class="container hidden" id="step4">
+    <h1>Step 4: Download QR Code</h1>
+    <div id="qrCodePreview"></div>
+    <button class="step-button" onclick="downloadQRCode()">Download QR Code</button>
+    <button class="step-button" onclick="returnToMainMenu()">Return to Main Menu</button>
+</div>
+
+<!-- Dock (Step Indicator) -->
+<div class="dock">
+    <span class="step-indicator" id="stepIndicator">Step 1 of 4</span>
+    <button class="back-button hidden" id="backButton" onclick="goBack()">Back</button>
+</div>
+
+<!-- Footer Neon Text -->
+<div class="footer-text">
+    Made by Zain
+</div>
+
+<script>
+    let currentStep = 0;
+    let qrData = "";
+    let selectedType = "";
+    let qrColor = "#000000";
+    let logoImage = null;
+    let userName = "";
+
+    // Set welcome message with user's name
+    function setWelcomeMessage() {
+        userName = document.getElementById("userName").value;
+        if (userName) {
+            document.getElementById("mainMenuGreeting").textContent = `Hello, ${userName}! Ready to create your QR code?`;
+            document.getElementById("nameEntry").classList.add("hidden");
+            document.getElementById("mainMenu").classList.remove("hidden");
+        } else {
+            alert("Please enter your name.");
+        }
+    }
+
+    // Go to Step 1
+    function goToStep1() {
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("step1").classList.remove("hidden");
+        updateStepIndicator();
+    }
+
+    // Step 1: Choose QR Type
+    function chooseOption(type) {
+        selectedType = type;
+        document.getElementById("step1").classList.add("hidden");
+        document.getElementById("dataStep").classList.remove("hidden");
+
+        if (selectedType === "file") {
+            document.getElementById("dataInput").classList.add("hidden");
+            document.getElementById("fileInput").classList.remove("hidden");
+        } else if (selectedType === "img") {
+            document.getElementById("dataInput").classList.add("hidden");
+            document.getElementById("imgInput").classList.remove("hidden");
+        } else if (selectedType === "video") {
+            document.getElementById("dataInput").classList.add("hidden");
+            document.getElementById("ytInput").classList.remove("hidden");
+        } else {
+            document.getElementById("dataInput").classList.remove("hidden");
+        }
+
+        updateStepIndicator();
+    }
+
+    // Step 2: Submit Data and Go to Step 3
+    function goToStep3() {
+        if (selectedType === "file") {
+            const file = document.getElementById("fileInput").files[0];
+            if (file) {
+                qrData = URL.createObjectURL(file);
+            }
+        } else if (selectedType === "img") {
+            const imgFile = document.getElementById("imgInput").files[0];
+            if (imgFile) {
+                qrData = URL.createObjectURL(imgFile);
+            }
+        } else if (selectedType === "video") {
+            const ytUrl = document.getElementById("ytInput").value;
+            if (ytUrl) {
+                qrData = ytUrl;
+            }
+        } else {
+            qrData = document.getElementById("dataInput").value;
+        }
+
+        if (!qrData) {
+            alert("Please enter some data.");
+            return;
+        }
+
+        document.getElementById("dataStep").classList.add("hidden");
+        document.getElementById("step3").classList.remove("hidden");
+        updateStepIndicator();
+    }
+
+    // Step 3: Generate QR Code
+    function generateQRCode() {
+        const qrOptions = {
+            text: qrData,
+            color: qrColor,
+            width: 200,
+            height: 200,
+        };
+
+        if (logoImage) {
+            qrOptions.image = logoImage;
+        }
+
+        QRCode.toDataURL(qrOptions.text, {
+            color: qrOptions.color,
+            width: qrOptions.width,
+            height: qrOptions.height,
+        }, function (err, url) {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            const img = document.createElement("img");
+            img.src = url;
+            document.getElementById("qrCodePreview").innerHTML = "";
+            document.getElementById("qrCodePreview").appendChild(img);
+            document.getElementById("step3").classList.add("hidden");
+            document.getElementById("step4").classList.remove("hidden");
+            updateStepIndicator();
+        });
+    }
+
+    // Step 4: Download QR Code
+    function downloadQRCode() {
+        const qrImage = document.querySelector("#qrCodePreview img").src;
+        const link = document.createElement("a");
+        link.href = qrImage;
+        link.download = "qr_code.png";
+        link.click();
+    }
+
+    // Return to Main Menu
+    function returnToMainMenu() {
+        document.getElementById("step1").classList.add("hidden");
+        document.getElementById("dataStep").classList.add("hidden");
+        document.getElementById("step3").classList.add("hidden");
+        document.getElementById("step4").classList.add("hidden");
+        document.getElementById("mainMenu").classList.remove("hidden");
+        updateStepIndicator();
+    }
+
+    // Update the Step Indicator
+    function updateStepIndicator() {
+        const stepIndicator = document.getElementById("stepIndicator");
+        stepIndicator.textContent = `Step ${currentStep + 1} of 4`;
+    }
+
+    // Go Back to Previous Steps
+    function goBackToStep1() {
+        document.getElementById("dataStep").classList.add("hidden");
+        document.getElementById("step1").classList.remove("hidden");
+        updateStepIndicator();
+    }
+
+    function goBackToStep2() {
+        document.getElementById("step3").classList.add("hidden");
+        document.getElementById("dataStep").classList.remove("hidden");
+        updateStepIndicator();
+    }
+</script>
+
+</body>
+</html>
